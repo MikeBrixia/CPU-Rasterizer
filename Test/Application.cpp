@@ -1,10 +1,8 @@
 ﻿
 #include "Application.h"
-
 #include <algorithm>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_video.h>
-
 #include "../src/Rasterizer.h"
 
 Application::Application(): window(nullptr)
@@ -89,17 +87,20 @@ void Application::rasterize()
 {
     Rasterizer rasterizer;
     
-    rasterizer.draw_line(surface, 0, 0, 600, 400, palette, { 255, 0, 0, 255 });
-    rasterizer.draw_line(surface, 0, 0, 500, 400, palette, { 255, 0, 0, 255 });
-    rasterizer.draw_line(surface, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, palette, { 255, 0, 0, 255 });
-    rasterizer.draw_line(surface, 0, 0, 5, WINDOW_HEIGHT, palette, { 255, 0, 0, 255 });
-    rasterizer.draw_line(surface, 0, 0, WINDOW_WIDTH, 5, palette, { 255, 0, 0, 255 });
-    rasterizer.draw_line(surface, 125, 380, 425, 360, palette, { 255, 0, 0, 255 });
-    rasterizer.draw_line(surface, 125, 360, 425, 380, palette, { 0, 255, 0, 255 });
+    //rasterizer.draw_line(surface, 0, 0, 600, 400, palette, { 255, 0, 0, 255 });
+    //rasterizer.draw_line(surface, 0, 0, 500, 400, palette, { 255, 0, 0, 255 });
+    //rasterizer.draw_line(surface, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, palette, { 255, 0, 0, 255 });
+    //rasterizer.draw_line(surface, 0, 0, 5, WINDOW_HEIGHT, palette, { 255, 0, 0, 255 });
+    //rasterizer.draw_line(surface, 0, 0, WINDOW_WIDTH, 5, palette, { 255, 0, 0, 255 });
+    //rasterizer.draw_line(surface, 125, 380, 425, 360, palette, { 255, 0, 0, 255 });
+    //rasterizer.draw_line(surface, 125, 360, 425, 380, palette, { 0, 255, 0, 255 });
     
     rasterizer.draw_triangle(surface, palette, {255, 0, 0, 255},
         { 0, 255, 0, 255 }, { 0, 0, 255, 255 },
         100, 100, 400, 100, 250, 400);
+    rasterizer.draw_triangle(surface, palette, {255, 0, 0, 255},
+        { 0, 255, 0, 255 }, { 0, 0, 255, 255 },
+        100, 100, 400, 100, 50, 50);
     SDL_UpdateWindowSurface(window);
 }
 

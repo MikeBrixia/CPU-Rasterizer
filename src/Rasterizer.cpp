@@ -1,5 +1,6 @@
 ﻿
 #include "Rasterizer.h"
+#include <algorithm>
 #include <cmath>
 #include <utility>
 
@@ -32,7 +33,6 @@ void Rasterizer::draw_line(SDL_Surface* surface, int x0, int y0, int x1, int y1,
     
     const int a = y0 - y1; // coefficient of X.
     const int b = x1 - x0; // Y coefficient of Y and delta X.
-    const int c = x0 * y1 - x1 * y0; // offset.
     
     int eq_result = LINE_EQUATION(x0 + 1, y + 0.5, x0, y0, x1, y1);
 
@@ -90,15 +90,18 @@ void Rasterizer::draw_line(SDL_Surface* surface, uint32_t x0, uint32_t y0, uint3
 void Rasterizer::draw_triangle(SDL_Surface* surface, SDL_Palette* palette, SDL_Color color1, SDL_Color color2, SDL_Color color3,
         int x0, int y0, int x1, int y1, int x2, int y2)
 {
-    float alpha_denominator = LINE_EQUATION(x0, y0, x1, y1, x2, y2);
-    float beta_denominator = LINE_EQUATION(x1, y1, x2, y2, x0, y0);
-    float gamma_denominator = LINE_EQUATION(x2, y2, x0, y0, x1, y1);
+    const float alpha_denominator = LINE_EQUATION(x0, y0, x1, y1, x2, y2);
+    const float beta_denominator = LINE_EQUATION(x1, y1, x2, y2, x0, y0);
+    const float gamma_denominator = LINE_EQUATION(x2, y2, x0, y0, x1, y1);
 
-    // create a bounding box around triangle vertices.
-    int x_min = std::min(x0, std::min(x1, x2));
-    int x_max = std::max(x0, std::max(x1, x2));
-    int y_min = std::min(y0, std::min(y1, y2));
-    int y_max = std::max(y0, std::max(y1, y2));
+    const float f12 = LINE_EQUATION(-1, -1, x1, y1, x2, y2);
+    const float f20 = LINE_EQUATION(-1, -1, x2, y2, x0, y0);
+    const float f01 = LINE_EQUATION(-1, -1, x0, y0, x1, y1);
+    
+    const int x_min = std::min({x0, x1, x2}); // bottom-left bounding box point x coordinate
+    const int x_max = std::max({x0, x1, x2}); // bottom-right bounding box point
+    const int y_min = std::min({y0, y1, y2}); // bottom-left bounding box point
+    const int y_max = std::max({y0, y1, y2}); // bottom-left bounding box point
     
     for (int x = x_min; x < x_max; ++x)
     {
@@ -107,16 +110,21 @@ void Rasterizer::draw_triangle(SDL_Surface* surface, SDL_Palette* palette, SDL_C
             float alpha = LINE_EQUATION(x, y, x1, y1, x2, y2) / alpha_denominator;
             float beta = LINE_EQUATION(x, y, x2, y2, x0, y0) / beta_denominator;
             float gamma = LINE_EQUATION(x, y, x0, y0, x1, y1) / gamma_denominator;
-            
-            // Is the point inside the triangle? (barycentric coordinates between 0 and 1)
-            if (alpha > 0 && beta > 0 && gamma > 0)
+
+            const bool is_inside_triangle = alpha >= 0 && beta >= 0 && gamma >= 0; // Is the point inside the triangle? (barycentric coordinates between 0 and 1)
+            // If the pixel lies on a shared edge, the triangle will draw the pixel
+            // iff the point opposite to the edge is on the same side of the line
+            // as the external point (in our case [-1, 1])
+            const bool edge_test = alpha > 0 || alpha_denominator * f12 > 0
+                                   && beta > 0 || beta_denominator * f20 > 0
+                                   && gamma > 0 || gamma_denominator * f01 > 0;
+            if (is_inside_triangle && edge_test)
             {
-                float r = alpha * color1.r + beta * color2.r + gamma * color3.r;
-                float g = alpha * color1.g + beta * color2.g + gamma * color3.g;
-                float b = alpha * color1.b + beta * color2.b + gamma * color3.b;
-                
+                float r = alpha * static_cast<float>(color1.r) + beta * static_cast<float>(color2.r) + gamma * static_cast<float>(color3.r);
+                float g = alpha * static_cast<float>(color1.g) + beta * static_cast<float>(color2.g) + gamma * static_cast<float>(color3.g);
+                float b = alpha * static_cast<float>(color1.b) + beta * static_cast<float>(color2.b) + gamma * static_cast<float>(color3.b);
                 // result of the Gouraud interpolation.
-                SDL_Color interpolated_color = SDL_Color{ static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b), 255};
+                SDL_Color interpolated_color = SDL_Color{static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b), 255};
                 uint32_t pixel = SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), palette,
                     interpolated_color.r, interpolated_color.g, interpolated_color.b, interpolated_color.a);
                 // Set the pixel color.
