@@ -5,7 +5,7 @@
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_video.h>
 
-#include "Rasterizer.h"
+#include "../src/Rasterizer.h"
 
 Application::Application(): window(nullptr)
 {
