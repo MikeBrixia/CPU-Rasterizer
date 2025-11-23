@@ -1,9 +1,9 @@
 ﻿
 #include <iostream>
 #include <SDL3/SDL.h>
-#include "Application.h"
+#include "src/Application.h"
 
-void main()
+void main(int argc, char* argv[])
 {
     SDL_Init(SDL_INIT_VIDEO);
 

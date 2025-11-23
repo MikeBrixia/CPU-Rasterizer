@@ -39,3 +39,10 @@
 
 # debug information files
 *.dwo
+
+# visual studio
+*.vcxproj
+*.vcxproj.filters
+
+# excluded folders
+x64/
