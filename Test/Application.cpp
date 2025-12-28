@@ -1,6 +1,9 @@
 ﻿
 #include "Application.h"
 #include <algorithm>
+#include <complex>
+#include <iostream>
+#include <__msvc_ostream.hpp>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_video.h>
 #include "../src/Rasterizer.h"
@@ -33,7 +36,10 @@ void Application::init_surface()
 {
     surface = SDL_GetWindowSurface(window);
     palette = SDL_CreatePalette(256);
+    
     SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_NONE);
+    
+    std::cout << SDL_GetError() << std::endl;
     
     SDL_Color color{30, 144, 255, 255};
     SDL_SetSurfacePalette(surface, palette);
@@ -87,20 +93,21 @@ void Application::rasterize()
 {
     Rasterizer rasterizer;
     
-    //rasterizer.draw_line(surface, 0, 0, 600, 400, palette, { 255, 0, 0, 255 });
-    //rasterizer.draw_line(surface, 0, 0, 500, 400, palette, { 255, 0, 0, 255 });
-    //rasterizer.draw_line(surface, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, palette, { 255, 0, 0, 255 });
-    //rasterizer.draw_line(surface, 0, 0, 5, WINDOW_HEIGHT, palette, { 255, 0, 0, 255 });
-    //rasterizer.draw_line(surface, 0, 0, WINDOW_WIDTH, 5, palette, { 255, 0, 0, 255 });
-    //rasterizer.draw_line(surface, 125, 380, 425, 360, palette, { 255, 0, 0, 255 });
-    //rasterizer.draw_line(surface, 125, 360, 425, 380, palette, { 0, 255, 0, 255 });
+    SDL_Surface* texture = SDL_LoadBMP("resources/Testimone.bmp");
     
-    rasterizer.draw_triangle(surface, palette, {255, 0, 0, 255},
-        { 0, 255, 0, 255 }, { 0, 0, 255, 255 },
-        100, 100, 400, 100, 250, 400);
-    rasterizer.draw_triangle(surface, palette, {255, 0, 0, 255},
-        { 0, 255, 0, 255 }, { 0, 0, 255, 255 },
-        100, 100, 400, 100, 50, 50);
+    std::cout << SDL_GetError() << std::endl;
+
+    if (texture) {
+        // Convert texture surface to destination surface format.
+        SDL_Surface* optimized_image = SDL_ConvertSurface(texture, surface->format);
+
+        if (optimized_image) {
+            rasterizer.draw_triangle(surface, palette, optimized_image, 100, 100, 400, 100, 250, 400);
+            //rasterizer.draw_triangle(surface, palette, image, 100, 100, 400, 100, 250, 400);
+            SDL_DestroySurface(optimized_image);
+        }
+    }
+    
     SDL_UpdateWindowSurface(window);
 }
 
