@@ -1,7 +1,5 @@
 ﻿
 #include "Application.h"
-#include <algorithm>
-#include <complex>
 #include <iostream>
 #include <__msvc_ostream.hpp>
 #include <SDL3/SDL_events.h>
@@ -34,6 +32,8 @@ void Application::init_window()
 
 void Application::init_surface()
 {
+    init_viewport();
+    
     surface = SDL_GetWindowSurface(window);
     palette = SDL_CreatePalette(256);
     
@@ -41,13 +41,27 @@ void Application::init_surface()
     
     std::cout << SDL_GetError() << std::endl;
     
-    SDL_Color color{30, 144, 255, 255};
+    SDL_Color color {30, 144, 255, 255};
     SDL_SetSurfacePalette(surface, palette);
     const uint32_t pixel = SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format),
         palette, color.r, color.g, color.b, color.a);
     SDL_FillSurfaceRect(surface, nullptr, pixel);
     
     SDL_UpdateWindowSurface(window);
+}
+
+void Application::init_viewport()
+{
+    // Initialize viewport matrix diagonal.
+    viewport_matrix[0][0] = WINDOW_WIDTH / 2;
+    viewport_matrix[1][1] = WINDOW_HEIGHT / 2;
+    viewport_matrix[2][2] = 1;
+    viewport_matrix[3][3] = 1;
+
+    // Initialize translation components.
+    viewport_matrix[0][3] = (WINDOW_WIDTH - 1) / 2;
+    viewport_matrix[1][3] = (WINDOW_HEIGHT - 1) / 2;
+    viewport_matrix[2][3] = 0;
 }
 
 void Application::loop()
@@ -95,15 +109,24 @@ void Application::rasterize()
     
     SDL_Surface* texture = SDL_LoadBMP("resources/Testimone.bmp");
     
-    std::cout << SDL_GetError() << std::endl;
+    std::cout << SDL_GetError() << '\n';
 
     if (texture) {
         // Convert texture surface to destination surface format.
         SDL_Surface* optimized_image = SDL_ConvertSurface(texture, surface->format);
 
         if (optimized_image) {
-            rasterizer.draw_triangle(surface, palette, optimized_image, 100, 100, 400, 100, 250, 400);
-            //rasterizer.draw_triangle(surface, palette, image, 100, 100, 400, 100, 250, 400);
+            SDL_LockSurface(surface);
+
+            Triangle triangle;
+            triangle.v1 = Vertex {0, 0, 0, 0, 0, SDL_Color {255, 0, 0, 255}};
+            triangle.v2 = Vertex {200, 0, 0, 1, 0, SDL_Color {0, 255, 0, 255}};
+            triangle.v3 = Vertex {100, 200, 0, 0.5, 1, SDL_Color {0, 0, 255, 255}};
+            rasterizer.draw_triangle(surface, palette, optimized_image, triangle);
+            rasterizer.draw_line(surface, palette, 400, 200, 650, 220, SDL_Color {255, 0, 0, 255});
+            rasterizer.draw_line(surface, palette, 200, 200, 250, 300, SDL_Color {255, 0, 0, 255});
+            
+            SDL_UnlockSurface(surface);
             SDL_DestroySurface(optimized_image);
         }
     }

@@ -12,7 +12,8 @@ private:
     SDL_Window* window;
     SDL_Surface* surface;
     SDL_Palette* palette;
-    
+
+    int viewport_matrix[4][4] = {};
 public:
     Application();
     ~Application();
@@ -20,6 +21,7 @@ public:
     void run();
     void init_window();
     void init_surface();
+    void init_viewport();
     void loop();
     void rasterize();
     void render();
