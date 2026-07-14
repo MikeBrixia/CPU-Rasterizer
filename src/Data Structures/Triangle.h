@@ -11,7 +11,4 @@ struct Vertex
 struct Triangle
 {
     Vertex v1, v2, v3;
-
-    void map_texture(float alpha, float beta, float gamma, float& u, float& v);
-    SDL_Color interpolate_texture(float u, float v);
 };
