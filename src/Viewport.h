@@ -3,14 +3,9 @@
 
 #include <string>
 #include <SDL3/SDL_video.h>
-#include <Eigen/Core>
 #include "Rasterizer.h"
-
-enum EViewportMode : uint8_t
-{
-    Orthographic,
-    Perspective,
-};
+#include "Data Structures/Scene.h"
+#include "Math/Matrix.h"
 
 enum EViewportState : uint8_t
 {
@@ -23,7 +18,6 @@ class Viewport
 {
     uint16_t width ;
     uint16_t height;
-    EViewportMode mode;
     EViewportState state;
 
     SDL_Window* window;
@@ -37,14 +31,16 @@ class Viewport
     /**
      * Transforms canonical-view-volume into screen space.
      */
-    Eigen::Matrix4f viewport_matrix;
+    Matrix4f viewport_matrix;
 
 public:
+    Scene scene;
+    
     Viewport(const std::string& name, uint16_t width, uint16_t height);
     ~Viewport();
     
     void init();
     void update();
-    void render();
+    void render(const Scene& scene);
     EViewportState get_state() const;
 };

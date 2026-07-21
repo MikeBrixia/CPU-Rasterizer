@@ -1,8 +1,6 @@
 ﻿
 #include "Rasterizer.h"
 #include <algorithm>
-#include <cmath>
-#include <iostream>
 #include <utility>
 
 #define LINE_EQUATION(x, y, x0, y0, x1, y1) (((y0) - (y1))*(x) + ((x1) - (x0))*(y) + (x0) * (y1) - (x1) * (y0))
@@ -66,6 +64,45 @@ void Rasterizer::draw_triangle(SDL_Surface* surface, SDL_Palette* palette, SDL_S
     }
 }
 
+void Rasterizer::draw_mesh(SDL_Surface* surface, SDL_Palette* palette, const Mesh& mesh, EDrawingMode mode)
+{
+    const std::vector<Vertex>& vertices = mesh.vertices;
+    const std::vector<uint32_t>& indices = mesh.indices;
+
+    SDL_Surface* optimized_image = nullptr;
+    if (mesh.texture)
+    {
+        // Convert texture surface to destination surface format.
+        optimized_image = SDL_ConvertSurface(mesh.texture, surface->format);
+    }
+    
+    // Draw all the triangles which compose the mesh.
+    for (uint32_t i = 0; i < indices.size(); i += 3)
+    {
+        const uint32_t v1_index = indices[i];
+        const uint32_t v2_index = indices[i + 1];
+        const uint32_t v3_index = indices[i + 2];
+
+        const Vertex v1 = vertices[v1_index];
+        const Vertex v2 = vertices[v2_index];
+        const Vertex v3 = vertices[v3_index];
+
+        // Draw mesh triangle.
+        if (mode == EDrawingMode::Wireframe)
+        {
+            draw_line(surface, palette, v1.x, v1.y, v2.x, v2.y, {0, 0, 0, 255});
+            draw_line(surface, palette, v2.x, v2.y, v3.x, v3.y, {0, 0, 0, 255});
+            draw_line(surface, palette, v3.x, v3.y, v1.x, v1.y, {0, 0, 0, 255});
+        }
+        else
+        {
+            draw_triangle(surface, palette, optimized_image, Triangle{v1, v2, v3});
+        }
+    }
+
+    SDL_DestroySurface(optimized_image);
+}
+
 void Rasterizer::draw_line(SDL_Surface* surface, SDL_Palette* palette, int x0, int y0, int x1, int y1, SDL_Color color)
 {
     uint32_t pixel = SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), palette, color.r, color.g, color.b, color.a);
@@ -74,10 +111,9 @@ void Rasterizer::draw_line(SDL_Surface* surface, SDL_Palette* palette, int x0, i
 
 void Rasterizer::draw_line(SDL_Surface* surface, int x0, int y0, int x1, int y1, int mapped_color)
 {
-    float slope = static_cast<float>(std::abs(y1 - y0)) / static_cast<float>(std::abs(x1 - x0));
-
-    // Is the line steep?
-    if (slope > 1)
+    // Is the line steep (slope > 1)?
+    bool is_steep = std::abs(y1 - y0) > std::abs(x1 - x0);
+    if (is_steep)
     {
         // In that case, swap X and Y coordinates to fall back in
         // the non-steep case.
@@ -85,32 +121,48 @@ void Rasterizer::draw_line(SDL_Surface* surface, int x0, int y0, int x1, int y1,
         std::swap(x1, y1);
     }
 
-    // Ensures that we always work with rising lines.
-    if (y0 > y1)
+    // Ensure we're always drawing from left to right.
+    if (x0 > x1)
+    {
+        std::swap(x0, x1);
         std::swap(y0, y1);
+    }
+
+    // Determines if we should move up or down on Y axis.
+    int y_step = y0 < y1 ? 1 : -1;
+    // Y starting point.
+    int y = y0;
     
-    int y = y0; // Y starting point.
-    
-    const int a = y0 - y1; // coefficient of X.
-    const int b = x1 - x0; // coefficient of Y.
-    
+    // coefficient of X.
+    const int a = y0 - y1;
+    // coefficient of Y.
+    const int b = x1 - x0; 
+
+    // Result of the line equation.
     int eq_result = LINE_EQUATION(x0 + 1, y + 0.5, x0, y0, x1, y1);
 
     // Iterate over all pixels along the path from start to end.
     for (int x = x0; x < x1; ++x)
     {
-        // Fill with color the chosen pixel.
-        set_pixel(surface, x, y, mapped_color);
+        // If the line is steep, we should draw pixel(y, x) instead of pixel(x, y) because of the
+        // previous steepness swap.
+        if (is_steep)
+            set_pixel(surface, y, x, mapped_color);
+        // otherwise we can keep the default order.
+        else
+            set_pixel(surface, x, y, mapped_color);
         
         if (eq_result < 0)
         {
-            // If true, we need to color the (x+1, y+1) pixel.
-            y += 1;
-            eq_result += a + b;
+            // If true, we move y_step forward on the Y axis.
+            y += y_step;
+            // And we compute f(x+1, y + y_step) = f(x,y) + (x1-x0) + (y0-y1).
+            eq_result += a * y_step + b;
         }
         else
         {
-            eq_result += a;
+            // Otherwise we compute f(x+1, y) = f(x, y) + (y0-y1)
+            eq_result += a * y_step;
         }
     }
 }

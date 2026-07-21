@@ -12,6 +12,7 @@ void main(int argc, char* argv[])
 
 #if ENABLE_TEST_APPLICATION
     Application app;
+    app.init();
     app.run();
 #endif
 

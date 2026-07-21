@@ -1,9 +1,7 @@
 ﻿#pragma once
 
-#include <SDL3/SDL_render.h>
-#include <SDL3/SDL_video.h>
-
 #include "../src/Viewport.h"
+#include "../src/Data Structures/Mesh.h"
 
 class Application
 {

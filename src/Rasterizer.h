@@ -2,13 +2,21 @@
 
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_surface.h>
+#include "Data Structures/Scene.h"
 #include "Data Structures/Triangle.h"
+
+enum EDrawingMode : uint8_t
+{
+    Normal,
+    Wireframe,
+};
 
 class Rasterizer
 {
 
 public:
-    
+
+    void draw_mesh(SDL_Surface* surface, SDL_Palette* palette, const Mesh& mesh, EDrawingMode mode = Normal);
     void draw_line(SDL_Surface* surface, SDL_Palette* palette, int x0, int y0, int x1, int y1, SDL_Color color);
     void draw_line(SDL_Surface* surface, int x0, int y0, int x1, int y1, int mapped_color);
     void draw_triangle(SDL_Surface* surface, SDL_Palette* palette, SDL_Surface* texture, const Triangle& triangle);
